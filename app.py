@@ -16,7 +16,7 @@ from models import Artist, db, Venue, Show
 app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
-db = SQLAlchemy(app)
+db.init_app(app)
 migrate = Migrate(app,db)
 
 
@@ -151,7 +151,10 @@ def create_venue_form():
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
     form = VenueForm(request.form)
-    error = False
+    
+    if form.validate_on_submit():
+     error = False
+    
     try:
         venue = Venue()
         venue.name = request.form['name']
@@ -169,6 +172,9 @@ def create_venue_submission():
         db.session.add(venue)
         db.session.commit()
     except:
+        
+        for field, message in form.errors.items():
+            flash(field + ' - ' + str(message), 'danger')    
         error = True
         db.session.rollback()
         print(sys.exc_info())
@@ -390,14 +396,15 @@ def edit_venue_submission(venue_id):
     return redirect(url_for('show_venue', venue_id=venue_id))
 
 @app.route('/artists/create', methods=['GET'])
-def create_artist_form():
+def create_artist_form():   
   form = ArtistForm()
   return render_template('forms/new_artist.html', form=form)
-
+  
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
     form = ArtistForm(request.form)
-    error = False
+    if validate_on_submit():
+     error = False
     try:
         artist = Artist()
         artist.name = request.form['name']
